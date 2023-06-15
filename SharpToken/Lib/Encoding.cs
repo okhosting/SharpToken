@@ -111,7 +111,7 @@ namespace SharpToken
             return encodedLine.Item1;
         }
 
-        public string Decode(List<int> inputTokensToDecode)
+        public string Decode(IEnumerable<int> inputTokensToDecode)
         {
             var qq = _bytePairEncodingCoreProcessor.DecodeNative(inputTokensToDecode.ToArray());
             var utf8Encoding = Encoding.GetEncoding("UTF-8");
