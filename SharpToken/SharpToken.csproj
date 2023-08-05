@@ -13,6 +13,15 @@
   </PropertyGroup>
 
 
+  <PropertyGroup>
+    <KeyFilePath>keypair.snk</KeyFilePath>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)' == 'Release'">
+    <SignAssembly>true</SignAssembly>
+    <AssemblyOriginatorKeyFile>$(KeyFilePath)</AssemblyOriginatorKeyFile>
+  </PropertyGroup>
+
   <ItemGroup>
     <Folder Include="Lib\"/>
     <Folder Include="data\"/>

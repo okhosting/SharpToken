@@ -1,4 +1,4 @@
-name: Publish NuGet Package
+name: Build, test and publish
 
 on:
   push:
@@ -6,12 +6,20 @@ on:
       - main # or your default branch name
 
 jobs:
-  build_and_publish:
+  build-test-publish:
     runs-on: windows-latest
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
+
+      - name: Write SNK file
+        shell: pwsh
+        run: |
+          $env:SNK_BASE64 -split ' ' -join "`n" | Out-File -Encoding utf8 ./SharpToken/keypair.snk.base64.txt
+          certutil -decode ./SharpToken/keypair.snk.base64.txt ./SharpToken/keypair.snk
+        env:
+          SNK_BASE64: ${{ secrets.SNK_BASE64 }}
 
       - name: Setup .NET
         uses: actions/setup-dotnet@v1
@@ -21,7 +29,7 @@ jobs:
       - name: Calculate Package Version
         id: calculate_version
         run: |
-          $version = "1.0.$env:GITHUB_RUN_NUMBER"
+          $version = "1.2.$env:GITHUB_RUN_NUMBER"
           echo "Calculated package version: $version"
           echo "::set-output name=version::$version"
 
