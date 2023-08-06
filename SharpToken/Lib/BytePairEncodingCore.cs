@@ -118,7 +118,7 @@ namespace SharpToken
             }
         }
 
-        public byte[] DecodeNative(List<int> tokens)
+        public byte[] DecodeNative(IEnumerable<int> tokens)
         {
             using (var memoryStream = new MemoryStream())
             {
