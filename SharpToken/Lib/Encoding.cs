@@ -120,7 +120,7 @@ namespace SharpToken
             }
 
             // Decode tokens
-            var decodedBytes = _bytePairEncodingCoreProcessor.DecodeNative(inputTokensToDecode);
+            var decodedBytes = _bytePairEncodingCoreProcessor.DecodeNative(inputTokensToDecode.ToList());
 
             // Convert bytes to UTF-8 string
             return Encoding.UTF8.GetString(decodedBytes);
