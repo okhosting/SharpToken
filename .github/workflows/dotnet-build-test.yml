@@ -1,23 +1,20 @@
-name: Build and Test
+name: Reusable Build and Test Workflow
 
 on:
-  pull_request:
-    branches:
-      - main
+  workflow_call:
 
 jobs:
-  call-reusable-build-test:
-    uses: ./.github/workflows/dotnet-build-test.yml
-
   build-test:
-    needs: call-reusable-build-test
-    runs-on: windows-latest
-
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Setup .NET
+      - name: Setup .NET SDKs
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: |

@@ -1,3 +1,4 @@
+using System.Net.Http;
 using System.Text;
 using NUnit.Framework;
 
@@ -32,6 +33,45 @@ public class Tests
     }
 
     [Test]
+    [TestCaseSource(nameof(TestData))]
+    public void TestTokensLength(Tuple<string, string, List<int>> resource)
+    {
+        var (encodingName, textToEncode, expectedEncoded) = resource;
+
+        var encoding = GptEncoding.GetEncoding(encodingName);
+        var tokenLength = encoding.CountTokens(textToEncode);
+        Assert.Multiple(() =>
+        {
+            Assert.That(tokenLength, Is.EqualTo(expectedEncoded.Count));
+        });
+    }
+
+    [Test]
+    public async Task TestEncodingAndDecodingInParallel()
+    {
+        var tasks = TestData.Select(_ => Task.Run(() =>
+        {
+            var (encodingName, textToEncode, expectedEncoded) = _;
+            var encoding = GptEncoding.GetEncoding(encodingName);
+            var encoded = encoding.Encode(textToEncode);
+            var decodedText = encoding.Decode(encoded);
+            return (textToEncode, encoded, expectedEncoded, decodedText);
+        }));
+
+        await Task.WhenAll(tasks).ConfigureAwait(false);
+
+        foreach (var (textToEncode, encoded, expectedEncoded, decodedText) in tasks.Select(_ => _.Result))
+        {
+            Assert.Multiple(() =>
+            {
+                Assert.That(encoded, Is.EqualTo(expectedEncoded));
+                Assert.That(decodedText, Is.EqualTo(textToEncode));
+            });
+        }
+    }
+
+
+    [Test]
     public void TestEncodingWithCustomAllowedSet()
     {
         const string encodingName = "cl100k_base";
@@ -43,6 +83,28 @@ public class Tests
         var expectedEncoded = new List<int> { 8538, 2991, 100276 };
 
         Assert.That(encoded, Is.EqualTo(expectedEncoded));
+    }
+
+    [Test]
+    public void TestEncodingWithAllowedAll()
+    {
+        const string encodingName = "cl100k_base";
+        const string inputText = "<|fim_prefix|>lorem ipsum<|fim_suffix|>, consectetur adipisicing elit<|fim_middle|>dolor sit amet";
+        const int fimPrefix = 100258;
+        const int fimMiddle = 100259;
+        const int fimSuffix = 100260;
+        var allowedSpecialTokens = new HashSet<string> { "all" };
+
+        var encoding = GptEncoding.GetEncoding(encodingName);
+        var encoded = encoding.Encode(inputText, allowedSpecialTokens);
+        var expectedEncoded = new List<int> { fimPrefix, 385, 1864, 27439, fimSuffix, 11, 36240, 57781, 31160, fimMiddle, 67, 795, 2503, 28311 };
+
+        var decoded = encoding.Decode(encoded);
+
+        Assert.Multiple(() => {
+            Assert.That(encoded, Is.EqualTo(expectedEncoded));
+            Assert.That(decoded, Is.EqualTo(inputText));
+        });
     }
 
     [Test]

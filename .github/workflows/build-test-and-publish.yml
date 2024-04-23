@@ -6,12 +6,16 @@ on:
       - main # or your default branch name
 
 jobs:
+  call-reusable-build-test:
+    uses: ./.github/workflows/dotnet-build-test.yml
+
   build-test-publish:
+    needs: call-reusable-build-test
     runs-on: windows-latest
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
 
       - name: Write SNK file
         shell: pwsh
@@ -22,15 +26,20 @@ jobs:
           SNK_BASE64: ${{ secrets.SNK_BASE64 }}
 
       - name: Setup .NET
-        uses: actions/setup-dotnet@v1
+        uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: '6.0.407'
+          dotnet-version: |
+            3.1.x
+            6.0.x
+            8.0.x
 
       - name: Calculate Package Version
         id: calculate_version
         run: |
-          $version = "1.2.$env:GITHUB_RUN_NUMBER"
-          echo "Calculated package version: $version"
+          $GithubRunNumber = $env:GITHUB_RUN_NUMBER
+          $Patch = $GithubRunNumber - 33
+          $version = "2.0.$Patch"
+          echo "Calculated package version: $version; Patch: $Patch; GitHub Run Number: $GithubRunNumber"
           echo "::set-output name=version::$version"
 
       - name: Restore dependencies
